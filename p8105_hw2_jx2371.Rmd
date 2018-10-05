@@ -10,4 +10,53 @@ Firstly，I set a globle option which hides the message and warning information.
 knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 ```
 
-# Problem 1
+#Problem 1
+##read and clean the dataset
+Firstly, a code chunck is writted to import the dataset
+```{r import data1}
+library(tidyverse)
+NYC_Transit_data = read_csv(file = "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv")
+```
+
+Then, a code chunck is written to clean the data according to the reqirement. I name the manipulated dataset NYC_Transit_data1
+```{r data cleaning}
+NYC_Transit_data1=janitor::clean_names(NYC_Transit_data) %>%
+  select(line:route11, entry, vending, entrance_type, ada)%>% #retain rows
+  mutate(entry= ifelse(entry=="YES",TRUE,FALSE))#convert entry variable to logical variable
+```
+
+##describe the dataset 
+The original dataset contains variables including "`r names(NYC_Transit_data)`"   
+And the dataset we made some cleaning in the previous chunk contains variables including "`r names(NYC_Transit_data1)`"  
+
+The original dataset contains variables including "`r names(NYC_Transit_data)`"   
+
+The data cleaning steps is described as following:
+1)use janitor::clean_names to transfer the variable names into lower snake case.  
+
+2)retain line, station, name, station latitude / longitude, routes served, entry, vending, entrance type, and ADA compliance.  
+
+3)convert the entry variable from character(YES VS NO) to a logical variable using ifelse function. 
+
+The dimension of the resulting dataset is `r dim(NYC_Transit_data1)[1]`&times;`r dim(NYC_Transit_data1)[2]`  
+
+I think the data is untidy, because some of the column names（route1-route11） are not names of variables, but still values of a variable. As a result of that, each row contains more than a single observation.
+
+##answers to dataset related questions
+1.There are `r nrow(distinct(NYC_Transit_data1, line, station_name))` distinct stations. 
+
+2.There are `r length(which(NYC_Transit_data1$ada==TRUE))`staion that are ADA compliant.  
+
+3.The proportion of station entrance/exits without vending allow entrance is `r   length(which(NYC_Transit_data1$vending=="NO"))/length(NYC_Transit_data1$vending)` 
+
+4.a code chunk is wrote to reformat the data so that the route number and route name are distinct
+```{r}
+gather(NYC_Transit_data1, key = route_number, value = route_name, route1:route11)
+```
+
+5.Among the distinct stations, how many station serve the A train?
+
+
+6. Of the stations that serves A train, how many are ADA compliant?
+
+
