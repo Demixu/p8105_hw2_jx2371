@@ -32,10 +32,8 @@ And the dataset we made some cleaning in the previous chunk contains variables i
 The original dataset contains variables including "`r names(NYC_Transit_data)`"   
 
 The data cleaning steps is described as following:
-1)use janitor::clean_names to transfer the variable names into lower snake case.  
-
-2)retain line, station, name, station latitude / longitude, routes served, entry, vending, entrance type, and ADA compliance.  
-
+1)use janitor::clean_names to transfer the variable names into lower snake case.    
+2)retain line, station, name, station latitude / longitude, routes served, entry, vending, entrance type, and ADA compliance.    
 3)convert the entry variable from character(YES VS NO) to a logical variable using ifelse function. 
 
 The dimension of the resulting dataset is `r dim(NYC_Transit_data1)[1]`&times;`r dim(NYC_Transit_data1)[2]`  
@@ -58,5 +56,70 @@ gather(NYC_Transit_data1, key = route_number, value = route_name, route1:route11
 
 
 6. Of the stations that serves A train, how many are ADA compliant?
+
+
+#Problem 2
+## Mr. Trash Wheel Sheet
+Firstly, import the excel file and specify the Mr. Trash Wheel Sheet. I omit the note column by range function. 
+```{r}
+library(readxl)
+trash_wheel= read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = "Mr. Trash Wheel", range = cell_cols("A:N")) 
+```
+
+Then，a code chunk is written to use reasonable names of the Mr. Trash Sheet. I delete the unit of the variable name to make it more readable.
+```{r}
+trash_wheel= janitor::clean_names(trash_wheel)#clean up the variables to the lower snake style
+names(trash_wheel)#view the new variable name
+trash_wheel=select(trash_wheel, volume=volume_cubic_yards, weight=weight_tons, everything())
+names(trash_wheel)# view the modified name
+```
+
+Now, a code chunk is written to omit the rows that do not include dumpster-specific data
+```{r}
+trash_wheel_clean=filter(trash_wheel, !is.na(dumpster))
+```
+
+Then, we omit the rows that do not include dumpster-specific data and round the number of sports balls to the nearest integer and convert the result to an integer variable.
+```{r}
+trash_wheel_clean=filter(trash_wheel,!is.na(dumpster))%>%
+  mutate(sports_balls=round(sports_balls,digits = 0))%>%
+  mutate(sports_balls=as.integer(sports_balls))
+```
+
+## precipitation data for 2016 and 2017
+Now, we read the precipitatin data for 2016 and 2017. Also we use janitor::clean_names to make the name more reasonable
+```{r}
+precipitation_2016= read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = "2016 Precipitation", range= cell_rows(2:15))
+precipitation_2017= read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = "2017 Precipitation", range= cell_rows(2:15))
+precipitation_2016= janitor::clean_names(precipitation_2016)
+precipitation_2017= janitor::clean_names(precipitation_2017)
+```
+
+omit the rows without precipitation data and add a variable year
+```{r precipitation_2016}
+precipitation_2016_clean=filter(precipitation_2016,!is.na(month)) %>%
+mutate(year=2016)
+```
+
+```{r}
+precipitation_2017_clean=filter(precipitation_2017,!is.na(month)) %>%
+mutate(year=2017)
+```
+
+
+now，combine the two datasets by month
+```{r}
+combine_data = left_join(precipitation_2016, precipitation_2017, by = "month")
+mutate(combine_data, month=month.name)
+```
+
+## description of two datasets
+And then caculate the median number of the sports balls in a dumpster in 2016
+```{r}
+A=filter(trash_wheel_clean, year==2016)
+median(A$sports_balls)
+```
+
+The total preciitition in 2017 is `r sum(combine_data$total_2017)`
 
 
