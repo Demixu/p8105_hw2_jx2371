@@ -5,8 +5,9 @@ date: "2018/10/5"
 output: github_document
 ---
 
-I set a globle option which hides the message and warning information.
+Firstly，I set a globle option which hides the message and warning information.
 ```{r setup}
 knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 ```
 
+# Problem 1
