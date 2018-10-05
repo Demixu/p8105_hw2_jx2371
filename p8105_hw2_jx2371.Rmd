@@ -109,8 +109,8 @@ mutate(year=2017)
 
 now，combine the two datasets by month
 ```{r}
-combine_data = left_join(precipitation_2016, precipitation_2017, by = "month")
-mutate(combine_data, month=month.name)
+combine_data = left_join(precipitation_2016_clean, precipitation_2017_clean, by = "month")%>%
+mutate(month=month.name)
 ```
 
 ## description of two datasets
@@ -122,4 +122,35 @@ median(A$sports_balls)
 
 The total preciitition in 2017 is `r sum(combine_data$total_2017)`
 
+## Problem 3
+import data
+```{r}
+devtools::install_github("p8105/p8105.datasets")
+```
+
+```{r}
+library(p8105.datasets)
+brfss=brfss_smart2010
+```
+
+##data wrangling
+We now write a code chunk to clean and restruct the data in the pipeline. The step is as follows:
+1.format the data to use appropriate variable names  
+2.focus on the “Overall Health” topic  
+3.exclude variables for class, topic, question, sample size, and everything from lower confidence limit to GeoLocation  
+4.structure data so that values for Response (“Excellent” to “Poor”) are column names / variables which indicate the proportion of subjects with each response (which are values of Data_value in the original dataset)  
+5.create a new variable showing the proportion of responses that were “Excellent” or “Very Good"".I name this variable as "above_verygood"
+```{r}
+brfss_data= brfss_smart2010 %>%
+  janitor::clean_names() %>%
+  filter(topic=="Overall Health") %>%
+  select(-class, -topic, -question, -sample_size, -confidence_limit_low:-geo_location) %>%
+  spread(key= response, value= data_value) %>% 
+  janitor::clean_names() %>%
+  mutate(over_verygood=excellent+ very_good)
+```
+
+##answers to the dataset question
+1. There are `r nrow(distinct(brfss_data, locationdesc))` unique locations included in the data set.
+2. THere are `r nrow(distinct(brfss_data, locationabbr))` state present， so all the states are presented in it.
 
