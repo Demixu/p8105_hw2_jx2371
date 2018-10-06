@@ -12,13 +12,13 @@ knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 
 #Problem 1
 ##read and clean the dataset
-Firstly, a code chunck is writted to import the dataset
+Firstly, a code chunck is written to import the dataset.
 ```{r import data1}
 library(tidyverse)
 NYC_Transit_data = read_csv(file = "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv")
 ```
 
-Then, a code chunck is written to clean the data according to the reqirement. I name the manipulated dataset NYC_Transit_data1
+Then, a code chunck is written to clean the data according to the reqirement. I name the manipulated dataset NYC_Transit_data1.
 ```{r data cleaning}
 NYC_Transit_data1=janitor::clean_names(NYC_Transit_data) %>%
   select(line:route11, entry, vending, entrance_type, ada)%>% #retain rows
@@ -28,8 +28,6 @@ NYC_Transit_data1=janitor::clean_names(NYC_Transit_data) %>%
 ##describe the dataset 
 The original dataset contains variables including "`r names(NYC_Transit_data)`"   
 And the dataset we made some cleaning in the previous chunk contains variables including "`r names(NYC_Transit_data1)`"  
-
-The original dataset contains variables including "`r names(NYC_Transit_data)`"   
 
 The data cleaning steps is described as following:
 1)use janitor::clean_names to transfer the variable names into lower snake case.    
@@ -43,20 +41,37 @@ I think the data is untidy, because some of the column names（route1-route11）
 ##answers to dataset related questions
 1.There are `r nrow(distinct(NYC_Transit_data1, line, station_name))` distinct stations. 
 
-2.There are `r length(which(NYC_Transit_data1$ada==TRUE))`staion that are ADA compliant.  
+2.There are `r length(which(NYC_Transit_data1$ada==TRUE))` staions that are ADA compliant.
+specificly, I use a code chunk to caculate the number of distinct stations that are ADA compliant.
+```{r distinct}
+filter(NYC_Transit_data1, ada==TRUE)%>%
+  distinct(NYC_Transit_data1, line, station_name)%>%
+  nrow()
+```
+
 
 3.The proportion of station entrance/exits without vending allow entrance is `r   length(which(NYC_Transit_data1$vending=="NO"))/length(NYC_Transit_data1$vending)` 
 
-4.a code chunk is wrote to reformat the data so that the route number and route name are distinct
-```{r}
-gather(NYC_Transit_data1, key = route_number, value = route_name, route1:route11)
+4.a code chunk is written to reformat the data so that the route number and route name are distinct
+```{r gather}
+NYC_Transit_data2=gather(NYC_Transit_data1, key = route_number, value = route_name, route1:route11)
 ```
 
-5.Among the distinct stations, how many station serve the A train?
+5.Among the distinct stations, I use the following chunk to caculate the stations serve the A train.
+```{r A train station}
+filter(NYC_Transit_data2, route_name=="A") %>%
+  distinct(line, station_name) %>%
+  nrow()
+```
+So the distinct station serving the A train is 60 
 
-
-6. Of the stations that serves A train, how many are ADA compliant?
-
+6. Of the stations that serves A train, I use the following chunk to caculate the stations that are ADA compliant.
+```{r}
+filter(NYC_Transit_data2, route_name=="A",ada==TRUE) %>%
+  distinct(line, station_name) %>%
+  nrow()
+```
+So among the distinct staions that serves A train, 17 are ADA compliant.
 
 #Problem 2
 ## Mr. Trash Wheel Sheet
@@ -67,16 +82,11 @@ trash_wheel= read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sh
 ```
 
 Then，a code chunk is written to use reasonable names of the Mr. Trash Sheet. I delete the unit of the variable name to make it more readable.
-```{r}
+```{r rename} 
 trash_wheel= janitor::clean_names(trash_wheel)#clean up the variables to the lower snake style
 names(trash_wheel)#view the new variable name
 trash_wheel=select(trash_wheel, volume=volume_cubic_yards, weight=weight_tons, everything())
 names(trash_wheel)# view the modified name
-```
-
-Now, a code chunk is written to omit the rows that do not include dumpster-specific data
-```{r}
-trash_wheel_clean=filter(trash_wheel, !is.na(dumpster))
 ```
 
 Then, we omit the rows that do not include dumpster-specific data and round the number of sports balls to the nearest integer and convert the result to an integer variable.
@@ -87,7 +97,7 @@ trash_wheel_clean=filter(trash_wheel,!is.na(dumpster))%>%
 ```
 
 ## precipitation data for 2016 and 2017
-Now, we read the precipitatin data for 2016 and 2017. Also we use janitor::clean_names to make the name more reasonable
+Now, we read the precipitatin data for 2016 and 2017. Also we use janitor::clean_names to make the name more reasonable. I notice the first row contains unseless information and may have influence on the variables, so I delete the first row by a range function and leave two variables including month and total.
 ```{r}
 precipitation_2016= read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = "2016 Precipitation", range= cell_rows(2:15))
 precipitation_2017= read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = "2017 Precipitation", range= cell_rows(2:15))
@@ -95,32 +105,34 @@ precipitation_2016= janitor::clean_names(precipitation_2016)
 precipitation_2017= janitor::clean_names(precipitation_2017)
 ```
 
-omit the rows without precipitation data and add a variable year
+omit the rows without precipitation data and add a variable year. Also, I convert month to a character vriables there
 ```{r precipitation_2016}
-precipitation_2016_clean=filter(precipitation_2016,!is.na(month)) %>%
-mutate(year=2016)
+precipitation_2016_clean=filter(precipitation_2016,!is.na(month), !is.na(total)) %>%
+mutate(year=2016, month=month.name)
 ```
 
-```{r}
-precipitation_2017_clean=filter(precipitation_2017,!is.na(month)) %>%
-mutate(year=2017)
+```{r precipitation_2017}
+precipitation_2017_clean=filter(precipitation_2017,!is.na(month), !is.na(total)) %>%
+mutate(year=2017, month=month.name)
 ```
 
-
-now，combine the two datasets by month
+now，I combine the two datasets of 2016 and 2017 by "bind_rows"
 ```{r}
-combine_data = left_join(precipitation_2016_clean, precipitation_2017_clean, by = "month")%>%
-mutate(month=month.name)
+combine_precipitation = bind_rows(precipitation_2016_clean,precipitation_2017_clean) 
 ```
 
 ## description of two datasets
-And then caculate the median number of the sports balls in a dumpster in 2016
+The Mr. trash wheel dataset shows the information of the trash removed from the Inner Harbor in Baltimore and dumped into dumpster after collected in Mr. trash wheel. The datasets contains variables as following: `r names(trash_wheel_clean)`   It contains `r nrow(trash_wheel_clean)` observations from 2015 to 2018. I think all the variables except date are key variable, because there are much missing data of date.  
+
+The precipitation of 2016 and 2017 contains `r nrow(combine_precipitation)` observation in total. And the resulting combined dataset contains variables:total, year and month. I think the total (of precipitation) is the key variable.
+
+And then I caculate the median number of the sports balls in a dumpster in 2016 in the code chunk
 ```{r}
 A=filter(trash_wheel_clean, year==2016)
 median(A$sports_balls)
 ```
 
-The total preciitition in 2017 is `r sum(combine_data$total_2017)`
+The total preciitition in 2017 is `r sum(precipitation_2017_clean$total)`
 
 ## Problem 3
 import data
@@ -152,5 +164,23 @@ brfss_data= brfss_smart2010 %>%
 
 ##answers to the dataset question
 1. There are `r nrow(distinct(brfss_data, locationdesc))` unique locations included in the data set.
-2. THere are `r nrow(distinct(brfss_data, locationabbr))` state present， so all the states are presented in it.
+2. There are `r nrow(distinct(brfss_data, locationabbr))` state present， so all the states are presented in it.
+3. The median of the "Excellent " response value is caculated in the chunk below.
+```{r}
+median(filter(brfss_data, year == 2002)$excellent, na.rm=TRUE)
+```
+
+##plot based on the brfss data
+A code chunk is used to draw a histogram of "Excellent" response values in the year 2002
+```{r histogram}
+ggplot(subset(brfss_data, year==2002), aes(x=excellent))+
+  geom_histogram()
+```
+
+A code chunk is used to draw a scatteplot showing the proportion of “Excellent” response values in New York County and Queens County (both in NY State) in each year from 2002 to 2010.
+```{r scatterplot}
+filter(brfss_data, locationdesc=="NY - New York County" | locationdesc=="NY - Queens County") %>%
+  ggplot(aes(x = year , y = excellent)) + 
+  geom_point(aes(color = locationdesc))
+```
 
